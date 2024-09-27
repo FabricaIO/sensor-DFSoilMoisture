@@ -16,11 +16,12 @@
 
 class DFSoilMoisture : public Sensor {
 	public:
-		DFSoilMoisture(String ConfigFile = "SoilMoisture.json");
+		DFSoilMoisture(int Pin = A0, String ConfigFile = "SoilMoisture.json");
 		bool begin();
 		bool takeMeasurement();
 		String getConfig();
 		bool setConfig(String config);
+		std::tuple<Sensor::calibration_response, String> calibrate(int step);
 		
 	private:
 		/// @brief Soil moisture sensor configuration
@@ -33,9 +34,10 @@ class DFSoilMoisture : public Sensor {
 
 			/// @brief The analog pin to use
 			int Pin;
-
 		} current_config;
 
 		/// @brief Path to settings file
 		String path;
+
+		uint16_t rawMeasurement();
 };

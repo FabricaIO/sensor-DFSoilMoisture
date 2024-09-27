@@ -1,9 +1,11 @@
 #include "DFSoilMoisture.h"
 
 /// @brief Creates a soil moisture sensor
+/// @param Pin The analog pin to use
 /// @param ConfigFile The name of the configuration file to use
-DFSoilMoisture::DFSoilMoisture(String ConfigFile) {
+DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) {
 	path = "/settings/sen/" + ConfigFile;
+	current_config.Pin = Pin;
 }
 
 /// @brief Starts a Data Template object
@@ -20,7 +22,8 @@ bool DFSoilMoisture::begin() {
 	// Create settings directory if necessary
 	if (!checkConfig(path)){
 		// Set defaults
-		current_config = { .AirValue = 500, .WaterValue = 200, .Pin = A0};
+		current_config.AirValue = 500;
+		current_config.WaterValue = 200;
 		result = saveConfig(path, getConfig());
 	} else {
 		// Load settings
@@ -32,9 +35,7 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	int rawValue = analogRead(A0);
-	int calValue = map(rawValue, current_config.AirValue, current_config.WaterValue, 0, 100);
-	values[0] = calValue;
+	values[0] = map(rawMeasurement(), current_config.AirValue, current_config.WaterValue, 0, 100);
 	return true;
 }
 
@@ -75,4 +76,54 @@ bool DFSoilMoisture::setConfig(String config) {
 	current_config.Pin = doc["Pin"].as<int>();
 	pinMode(current_config.Pin, INPUT);
 	return saveConfig(path, config);
+}
+
+/// @brief Used to calibrate sensor
+/// @param step The calibration step to execute for multi-step calibration processes
+/// @return A tuple with the fist element as a Sensor::calibration_response and the second an optional message String accompanying the response
+std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int step) {
+	Serial.println("Calibrating soil moisture sensor, step " + String(step));
+	std::tuple<Sensor::calibration_response, String> response;
+	int new_value;
+	switch (step) {
+		case 0:
+			response = { Sensor::calibration_response::next, "Ensure sensor is completely dry, then click next." };
+			break;
+		case 1:
+			new_value = rawMeasurement();
+			for (int i = 0; i < 9; i++) {
+				int temp_value = rawMeasurement();
+				new_value = temp_value < new_value ? temp_value : new_value;
+				delay(50);
+			}
+			current_config.AirValue = new_value;
+			Serial.println("New air value: " + String(current_config.AirValue));
+			response = { Sensor::calibration_response::next, "Submerge sensor in water to indicated max line, then click next." };
+			break;
+		case 2:
+			new_value = rawMeasurement();
+			for (int i = 0; i < 9; i++) {
+				int temp_value = rawMeasurement();
+				new_value = temp_value > new_value ? temp_value : new_value;
+				delay(50);
+			}
+			current_config.WaterValue = new_value;
+			Serial.println("New water value: " + String(current_config.WaterValue));
+			if (saveConfig(path, getConfig())) {
+				response = { Sensor::calibration_response::done, "Calibration successful" };
+			} else {
+				response = { Sensor::calibration_response::error, "Couldn't save new configuration" };
+			}
+			break;
+		default:
+		response = { Sensor::calibration_response::error, "No such calibration step: " + String(step) };
+		break;
+	}
+	return response;
+}
+
+/// @brief Takes a war analog reading
+/// @return The analog value
+uint16_t DFSoilMoisture::rawMeasurement() {
+	return analogRead(current_config.Pin);
 }
