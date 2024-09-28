@@ -20,7 +20,7 @@ bool DFSoilMoisture::begin() {
 	Description.id = 2;
 	bool result = false;
 	// Create settings directory if necessary
-	if (!checkConfig(path)){
+	if (!checkConfig(path)) {
 		// Set defaults
 		current_config.AirValue = 500;
 		current_config.WaterValue = 200;
