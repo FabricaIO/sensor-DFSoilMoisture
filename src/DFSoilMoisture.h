@@ -10,11 +10,11 @@
  */
 
 #pragma once
-#include <Sensor.h>
+#include <GenericAnalogInput.h>
 #include <Storage.h>
 #include <ArduinoJson.h>
 
-class DFSoilMoisture : public Sensor {
+class DFSoilMoisture : public GenericAnalogInput {
 	public:
 		DFSoilMoisture(int Pin = A0, String ConfigFile = "SoilMoisture.json");
 		bool begin();
@@ -31,13 +31,5 @@ class DFSoilMoisture : public Sensor {
 
 			/// @brief The value for "water" (soaked)
 			int WaterValue;
-
-			/// @brief The analog pin to use
-			int Pin;
 		} current_config;
-
-		/// @brief Path to settings file
-		String path;
-
-		uint16_t rawMeasurement();
 };

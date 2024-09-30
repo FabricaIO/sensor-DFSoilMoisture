@@ -3,10 +3,7 @@
 /// @brief Creates a soil moisture sensor
 /// @param Pin The analog pin to use
 /// @param ConfigFile The name of the configuration file to use
-DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) {
-	path = "/settings/sen/" + ConfigFile;
-	current_config.Pin = Pin;
-}
+DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) : GenericAnalogInput(Pin, ConfigFile) {}
 
 /// @brief Starts a Data Template object
 /// @return True on success
@@ -20,14 +17,14 @@ bool DFSoilMoisture::begin() {
 	Description.id = 2;
 	bool result = false;
 	// Create settings directory if necessary
-	if (!checkConfig(path)) {
+	if (!checkConfig(config_path)) {
 		// Set defaults
 		current_config.AirValue = 500;
 		current_config.WaterValue = 200;
-		result = saveConfig(path, getConfig());
+		result = saveConfig(config_path, getConfig());
 	} else {
 		// Load settings
-		result = setConfig(Storage::readFile(path));
+		result = setConfig(Storage::readFile(config_path));
 	}
 	return result;
 }
@@ -35,7 +32,7 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	values[0] = map(rawMeasurement(), current_config.AirValue, current_config.WaterValue, 0, 100);
+	values[0] = map(getAnalogValue(analog_config.RollingAverage), current_config.AirValue, current_config.WaterValue, 0, 100);
 	return true;
 }
 
@@ -47,7 +44,11 @@ String DFSoilMoisture::getConfig() {
 	// Assign current values
 	doc["AirValue"] = current_config.AirValue;
 	doc["WaterValue"] = current_config.WaterValue;
-	doc["Pin"] = current_config.Pin;
+	doc["Pin"] = analog_config.Pin;
+	doc["ADC_Voltage_mv"] = analog_config.ADC_Voltage_mv;
+	doc["ADC_Resolution"] = analog_config.ADC_Resolution;
+	doc["RollingAverage"] = analog_config.RollingAverage;
+	doc["AverageSize"] = analog_config.AverageSize;
 
 	// Create string to hold output
 	String output;
@@ -73,9 +74,13 @@ bool DFSoilMoisture::setConfig(String config) {
 	// Assign loaded values
 	current_config.AirValue = doc["AirValue"].as<int>();
 	current_config.WaterValue = doc["WaterValue"].as<int>();
-	current_config.Pin = doc["Pin"].as<int>();
-	pinMode(current_config.Pin, INPUT);
-	return saveConfig(path, config);
+	analog_config.Pin = doc["Pin"].as<int>();
+	analog_config.ADC_Voltage_mv = doc["ADC_Voltage_mv"].as<int>();
+	analog_config.ADC_Resolution = doc["ADC_Resolution"].as<int>();
+	analog_config.RollingAverage = doc["RollingAverage"].as<bool>() ;
+	analog_config.AverageSize = doc["AverageSize"].as<int>();
+	configureInput();
+	return saveConfig(config_path, config);
 }
 
 /// @brief Used to calibrate sensor
@@ -90,9 +95,9 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 			response = { Sensor::calibration_response::next, "Ensure sensor is completely dry, then click next." };
 			break;
 		case 1:
-			new_value = rawMeasurement();
+			new_value = getAnalogValue(false);
 			for (int i = 0; i < 9; i++) {
-				int temp_value = rawMeasurement();
+				int temp_value = getAnalogValue(false);
 				new_value = temp_value < new_value ? temp_value : new_value;
 				delay(50);
 			}
@@ -101,15 +106,15 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 			response = { Sensor::calibration_response::next, "Submerge sensor in water to indicated max line, then click next." };
 			break;
 		case 2:
-			new_value = rawMeasurement();
+			new_value = getAnalogValue(false);
 			for (int i = 0; i < 9; i++) {
-				int temp_value = rawMeasurement();
+				int temp_value = getAnalogValue(false);
 				new_value = temp_value > new_value ? temp_value : new_value;
 				delay(50);
 			}
 			current_config.WaterValue = new_value;
 			Serial.println("New water value: " + String(current_config.WaterValue));
-			if (saveConfig(path, getConfig())) {
+			if (saveConfig(config_path, getConfig())) {
 				response = { Sensor::calibration_response::done, "Calibration successful" };
 			} else {
 				response = { Sensor::calibration_response::error, "Couldn't save new configuration" };
@@ -120,10 +125,4 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 		break;
 	}
 	return response;
-}
-
-/// @brief Takes a war analog reading
-/// @return The analog value
-uint16_t DFSoilMoisture::rawMeasurement() {
-	return analogRead(current_config.Pin);
 }
