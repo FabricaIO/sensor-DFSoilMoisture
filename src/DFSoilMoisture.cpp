@@ -5,26 +5,28 @@
 /// @param ConfigFile The name of the configuration file to use
 DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) : GenericAnalogInput(Pin, ConfigFile) {}
 
-/// @brief Starts a Data Template object
+/// @brief Starts a soil moisture sensor object
 /// @return True on success
 bool DFSoilMoisture::begin() {
 	values.resize(1);
-	Description.parameterQuantity = 1;
-	Description.type = "Environmental Sensor";
-	Description.name = "Soil Moisture Sensor";
-	Description.parameters = {"Soil Moisture"};
-	Description.units = {"%Moisture"};
-	Description.id = 2;
 	bool result = false;
-	// Create settings directory if necessary
-	if (!checkConfig(config_path)) {
-		// Set defaults
-		current_config.AirValue = 500;
-		current_config.WaterValue = 200;
-		result = saveConfig(config_path, getConfig());
-	} else {
-		// Load settings
-		result = setConfig(Storage::readFile(config_path));
+	bool configExists = checkConfig(config_path);
+	if (GenericAnalogInput::begin()) {
+		// Set description
+		Description.type = "Environmental Sensor";
+		Description.name = "Soil Moisture Sensor";
+		Description.parameters = {"Soil Moisture"};
+		Description.units = {"%Moisture"};
+		Description.id = 2;
+		if (!configExists) {
+			// Set defaults
+			add_config.AirValue = 500;
+			add_config.WaterValue = 200;
+			result = saveConfig(config_path, getConfig());
+		} else {
+			// Load settings
+			result = setConfig(Storage::readFile(config_path), false);
+		}
 	}
 	return result;
 }
@@ -32,7 +34,7 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	values[0] = map(getAnalogValue(analog_config.RollingAverage), current_config.AirValue, current_config.WaterValue, 0, 100);
+	values[0] = map(getAnalogValue(analog_config.RollingAverage), add_config.AirValue, add_config.WaterValue, 0, 100);
 	return true;
 }
 
@@ -40,15 +42,7 @@ bool DFSoilMoisture::takeMeasurement() {
 /// @return A JSON string of the config
 String DFSoilMoisture::getConfig() {
 	// Allocate the JSON document
-	JsonDocument doc;
-	// Assign current values
-	doc["AirValue"] = current_config.AirValue;
-	doc["WaterValue"] = current_config.WaterValue;
-	doc["Pin"] = analog_config.Pin;
-	doc["ADC_Voltage_mv"] = analog_config.ADC_Voltage_mv;
-	doc["ADC_Resolution"] = analog_config.ADC_Resolution;
-	doc["RollingAverage"] = analog_config.RollingAverage;
-	doc["AverageSize"] = analog_config.AverageSize;
+	JsonDocument doc = addAdditionalConfig();
 
 	// Create string to hold output
 	String output;
@@ -58,29 +52,30 @@ String DFSoilMoisture::getConfig() {
 }
 
 /// @brief Sets the configuration for this device
-/// @param config The JSON config to use
+/// @param config A JSON string of the configuration settings
+/// @param save If the configuration should be saved to a file
 /// @return True on success
-bool DFSoilMoisture::setConfig(String config) {
-	// Allocate the JSON document
-  	JsonDocument doc;
-	// Deserialize file contents
-	DeserializationError error = deserializeJson(doc, config);
-	// Test if parsing succeeds.
-	if (error) {
-		Serial.print(F("Deserialization failed: "));
-		Serial.println(error.f_str());
-		return false;
+bool DFSoilMoisture::setConfig(String config, bool save) {
+	if (GenericAnalogInput::setConfig(config, false)) {
+		// Allocate the JSON document
+		JsonDocument doc;
+		// Deserialize file contents
+		DeserializationError error = deserializeJson(doc, config);
+		// Test if parsing succeeds.
+		if (error) {
+			Serial.print(F("Deserialization failed: "));
+			Serial.println(error.f_str());
+			return false;
+		}
+		// Assign loaded values
+		add_config.AirValue = doc["AirValue"].as<int>();
+		add_config.WaterValue = doc["WaterValue"].as<int>();
+		if (save) {
+			return saveConfig(config_path, config);
+		}
+		return true;
 	}
-	// Assign loaded values
-	current_config.AirValue = doc["AirValue"].as<int>();
-	current_config.WaterValue = doc["WaterValue"].as<int>();
-	analog_config.Pin = doc["Pin"].as<int>();
-	analog_config.ADC_Voltage_mv = doc["ADC_Voltage_mv"].as<int>();
-	analog_config.ADC_Resolution = doc["ADC_Resolution"].as<int>();
-	analog_config.RollingAverage = doc["RollingAverage"].as<bool>() ;
-	analog_config.AverageSize = doc["AverageSize"].as<int>();
-	configureInput();
-	return saveConfig(config_path, config);
+	return false;
 }
 
 /// @brief Used to calibrate sensor
@@ -101,8 +96,8 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 				new_value = temp_value < new_value ? temp_value : new_value;
 				delay(50);
 			}
-			current_config.AirValue = new_value;
-			Serial.println("New air value: " + String(current_config.AirValue));
+			add_config.AirValue = new_value;
+			Serial.println("New air value: " + String(add_config.AirValue));
 			response = { Sensor::calibration_response::next, "Submerge sensor in water to indicated max line, then click next." };
 			break;
 		case 2:
@@ -112,8 +107,8 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 				new_value = temp_value > new_value ? temp_value : new_value;
 				delay(50);
 			}
-			current_config.WaterValue = new_value;
-			Serial.println("New water value: " + String(current_config.WaterValue));
+			add_config.WaterValue = new_value;
+			Serial.println("New water value: " + String(add_config.WaterValue));
 			if (saveConfig(config_path, getConfig())) {
 				response = { Sensor::calibration_response::done, "Calibration successful" };
 			} else {
@@ -125,4 +120,22 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 		break;
 	}
 	return response;
+}
+
+/// @brief Collects all the base class parameters and additional parameters
+/// @return a JSON document with all the parameters
+JsonDocument DFSoilMoisture::addAdditionalConfig() {
+	// Allocate the JSON document
+  	JsonDocument doc;
+	// Deserialize file contents
+	DeserializationError error = deserializeJson(doc, GenericAnalogInput::getConfig());
+	// Test if parsing succeeds.
+	if (error) {
+		Serial.print(F("Deserialization failed: "));
+		Serial.println(error.f_str());
+		return doc;
+	}
+	doc["AirValue"] = add_config.AirValue;
+	doc["WaterValue"] = add_config.WaterValue;
+	return doc;
 }

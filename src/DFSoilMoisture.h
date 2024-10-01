@@ -14,16 +14,17 @@
 #include <Storage.h>
 #include <ArduinoJson.h>
 
+/// @brief A analog soil moisture sensor
 class DFSoilMoisture : public GenericAnalogInput {
 	public:
 		DFSoilMoisture(int Pin = A0, String ConfigFile = "SoilMoisture.json");
 		bool begin();
 		bool takeMeasurement();
 		String getConfig();
-		bool setConfig(String config);
+		bool setConfig(String config, bool save);
 		std::tuple<Sensor::calibration_response, String> calibrate(int step);
 		
-	private:
+	protected:
 		/// @brief Soil moisture sensor configuration
 		struct {
 			/// @brief The value for "air" (dry) 
@@ -31,5 +32,7 @@ class DFSoilMoisture : public GenericAnalogInput {
 
 			/// @brief The value for "water" (soaked)
 			int WaterValue;
-		} current_config;
+		} add_config;
+
+		JsonDocument addAdditionalConfig();
 };
