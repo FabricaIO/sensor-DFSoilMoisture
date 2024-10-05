@@ -63,8 +63,8 @@ bool DFSoilMoisture::setConfig(String config, bool save) {
 		DeserializationError error = deserializeJson(doc, config);
 		// Test if parsing succeeds.
 		if (error) {
-			Serial.print(F("Deserialization failed: "));
-			Serial.println(error.f_str());
+			Logger.print(F("Deserialization failed: "));
+			Logger.println(error.f_str());
 			return false;
 		}
 		// Assign loaded values
@@ -82,7 +82,7 @@ bool DFSoilMoisture::setConfig(String config, bool save) {
 /// @param step The calibration step to execute for multi-step calibration processes
 /// @return A tuple with the fist element as a Sensor::calibration_response and the second an optional message String accompanying the response
 std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int step) {
-	Serial.println("Calibrating soil moisture sensor, step " + String(step));
+	Logger.println("Calibrating soil moisture sensor, step " + String(step));
 	std::tuple<Sensor::calibration_response, String> response;
 	int new_value;
 	switch (step) {
@@ -97,7 +97,7 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 				delay(50);
 			}
 			add_config.AirValue = new_value;
-			Serial.println("New air value: " + String(add_config.AirValue));
+			Logger.println("New air value: " + String(add_config.AirValue));
 			response = { Sensor::calibration_response::next, "Submerge sensor in water to indicated max line, then click next." };
 			break;
 		case 2:
@@ -108,7 +108,7 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 				delay(50);
 			}
 			add_config.WaterValue = new_value;
-			Serial.println("New water value: " + String(add_config.WaterValue));
+			Logger.println("New water value: " + String(add_config.WaterValue));
 			if (saveConfig(config_path, getConfig())) {
 				response = { Sensor::calibration_response::done, "Calibration successful" };
 			} else {
@@ -131,8 +131,8 @@ JsonDocument DFSoilMoisture::addAdditionalConfig() {
 	DeserializationError error = deserializeJson(doc, GenericAnalogInput::getConfig());
 	// Test if parsing succeeds.
 	if (error) {
-		Serial.print(F("Deserialization failed: "));
-		Serial.println(error.f_str());
+		Logger.print(F("Deserialization failed: "));
+		Logger.println(error.f_str());
 		return doc;
 	}
 	doc["AirValue"] = add_config.AirValue;
