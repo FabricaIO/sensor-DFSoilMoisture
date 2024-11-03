@@ -34,7 +34,7 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	values[0] = map(getAnalogValue(analog_config.RollingAverage), add_config.AirValue, add_config.WaterValue, 0, 100);
+	values[0] = map(getAnalogValue(analog_config.RollingAverage), add_config.AirValue, add_config.WaterValue, 100, 0);
 	return true;
 }
 
