@@ -8,15 +8,16 @@ DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) : GenericAnalogInput(
 /// @brief Starts a soil moisture sensor object
 /// @return True on success
 bool DFSoilMoisture::begin() {
-	values.resize(1);
+	values.resize(2);
 	bool result = false;
 	bool configExists = checkConfig(config_path);
 	if (GenericAnalogInput::begin()) {
 		// Set description
 		Description.type = "Environmental Sensor";
 		Description.name = "Soil Moisture Sensor";
-		Description.parameters = {"Soil Moisture"};
-		Description.units = {"%Moisture"};
+		Description.parameters = {"Soil Moisture", "Soil Moisture Raw"};
+		Description.parameterQuantity = 2;
+		Description.units = {"%Moisture", "mV"};
 		Description.id = 2;
 		if (!configExists) {
 			// Set defaults
@@ -34,7 +35,9 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	values[0] = map(getAnalogValue(analog_config.RollingAverage), add_config.AirValue, add_config.WaterValue, 0, 100);
+	int raw_value = getAnalogValue(analog_config.RollingAverage);
+	values[0] = map(raw_value, add_config.AirValue, add_config.WaterValue, 0, 100);
+	values[1] = raw_value;
 	return true;
 }
 
