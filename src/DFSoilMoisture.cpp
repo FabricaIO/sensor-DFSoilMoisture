@@ -70,6 +70,7 @@ bool DFSoilMoisture::setConfig(String config, bool save) {
 		// Assign loaded values
 		add_config.AirValue = doc["AirValue"].as<int>();
 		add_config.WaterValue = doc["WaterValue"].as<int>();
+		Description.parameters[0] = doc["ParamName"].as<String>();
 		if (save) {
 			return saveConfig(config_path, config);
 		}
@@ -137,5 +138,6 @@ JsonDocument DFSoilMoisture::addAdditionalConfig() {
 	}
 	doc["AirValue"] = add_config.AirValue;
 	doc["WaterValue"] = add_config.WaterValue;
+	doc["ParamName"] = Description.parameters[0];
 	return doc;
 }
