@@ -18,7 +18,6 @@ bool DFSoilMoisture::begin() {
 		Description.parameters = {"Soil Moisture", "Soil Moisture Raw"};
 		Description.parameterQuantity = 2;
 		Description.units = {"%Moisture", "mV"};
-		Description.id = 2;
 		if (!configExists) {
 			// Set defaults
 			add_config.AirValue = 500;
