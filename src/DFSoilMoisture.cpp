@@ -8,9 +8,7 @@ DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) : GenericAnalogInput(
 /// @brief Starts a soil moisture sensor object
 /// @return True on success
 bool DFSoilMoisture::begin() {
-	values.resize(2);
 	bool result = false;
-	bool configExists = checkConfig(config_path);
 	if (GenericAnalogInput::begin()) {
 		// Set description
 		Description.type = "Environmental Sensor";
@@ -18,7 +16,8 @@ bool DFSoilMoisture::begin() {
 		Description.parameters = {"Soil Moisture", "Soil Moisture Raw"};
 		Description.parameterQuantity = 2;
 		Description.units = {"%Moisture", "mV"};
-		if (!configExists) {
+		values.resize(Description.parameterQuantity);
+		if (!checkConfig(config_path)) {
 			// Set defaults
 			add_config.AirValue = 500;
 			add_config.WaterValue = 200;
