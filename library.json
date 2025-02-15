@@ -1,0 +1,51 @@
+{
+	"name": "Fabrica-IO Sensor DF Robot Soil Moisture",
+	"version": "0.5.0",
+	"description": "DF Robot analog soil moisture sensor for Fabrica-IO",
+	"keywords": "Fabrica-IO, sensor, soil moisture",
+	"repository":
+	{
+	  "type": "git",
+	  "url": "https://github.com/FabricaIO/sensor-DFSoilMoisture.git"
+	},
+	"authors":
+	[
+	  {
+		"name": "Sam Groveman",
+		"email": "SamGroveman@outlook.com",
+		"url": "https://github.com/FabricaIO"
+	  }
+	],
+	"dependencies": {
+		"GenericAnalogInput": "https://github.com/FabricaIO/sensor-GenericAnalogInput"
+	  },
+	"license": "GPLv3",
+	"homepage": "https://github.com/FabricaIO",
+	"frameworks": "arduino",
+	"platforms": "*",
+	"fabrica-io" : {
+		"name": "SoilMoisture",
+		"type": 0,
+		"category": "analog sensor",
+		"libname": "DFSoilMoisture",
+		"includes": ["DFSoilMoisture"],
+		"description": "Analog soil moisture sensor",
+		"constructor":
+		[
+			[
+				{
+					"name": "Pin",
+					"type": "int",
+					"description": "The pin to use",
+					"default": ""
+				},
+				{
+					"name": "ConfigFile",
+					"type": "String",
+					"description": "The name of the config file",
+					"default": "SoilMoisture.json"
+				}
+			]
+		]
+	}
+  }
