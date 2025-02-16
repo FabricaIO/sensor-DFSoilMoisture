@@ -1,5 +1,5 @@
 {
-	"name": "Fabrica-IO Sensor DF Robot Soil Moisture",
+	"name": "sensor-DFSoilMoisture",
 	"version": "0.5.0",
 	"description": "DF Robot analog soil moisture sensor for Fabrica-IO",
 	"keywords": "Fabrica-IO, sensor, soil moisture",
