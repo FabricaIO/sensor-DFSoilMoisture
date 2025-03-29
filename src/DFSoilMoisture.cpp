@@ -1,9 +1,10 @@
 #include "DFSoilMoisture.h"
 
 /// @brief Creates a soil moisture sensor
+/// @param Name The device name
 /// @param Pin The analog pin to use
 /// @param ConfigFile The name of the configuration file to use
-DFSoilMoisture::DFSoilMoisture(int Pin, String ConfigFile) : GenericAnalogInput(Pin, ConfigFile) {}
+DFSoilMoisture::DFSoilMoisture(String Name, int Pin, String ConfigFile) : GenericAnalogInput(Name, Pin, ConfigFile) {}
 
 /// @brief Starts a soil moisture sensor object
 /// @return True on success
@@ -12,7 +13,6 @@ bool DFSoilMoisture::begin() {
 	if (GenericAnalogInput::begin()) {
 		// Set description
 		Description.type = "Environmental Sensor";
-		Description.name = "Soil Moisture Sensor";
 		Description.parameters = {"Soil Moisture", "Soil Moisture Raw"};
 		Description.parameterQuantity = 2;
 		Description.units = {"%Moisture", "mV"};

@@ -17,7 +17,7 @@
 /// @brief A analog soil moisture sensor
 class DFSoilMoisture : public GenericAnalogInput {
 	public:
-		DFSoilMoisture(int Pin = A0, String ConfigFile = "SoilMoisture.json");
+		DFSoilMoisture(String Name, int Pin = A0, String ConfigFile = "SoilMoisture.json");
 		bool begin();
 		bool takeMeasurement();
 		String getConfig();
