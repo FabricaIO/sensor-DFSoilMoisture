@@ -89,7 +89,7 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 	int new_value;
 	switch (step) {
 		case 0:
-			response = { Sensor::calibration_response::next, "Ensure sensor is completely dry, then click next." };
+			response = { Sensor::calibration_response::NEXT, "Ensure sensor is completely dry, then click next." };
 			break;
 		case 1:
 			new_value = getAnalogValue(false);
@@ -100,7 +100,7 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 			}
 			add_config.AirValue = new_value;
 			Logger.println("New air value: " + String(add_config.AirValue));
-			response = { Sensor::calibration_response::next, "Submerge sensor in water to indicated max line, then click next." };
+			response = { Sensor::calibration_response::NEXT, "Submerge sensor in water to indicated max line, then click next." };
 			break;
 		case 2:
 			new_value = getAnalogValue(false);
@@ -112,13 +112,13 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 			add_config.WaterValue = new_value;
 			Logger.println("New water value: " + String(add_config.WaterValue));
 			if (saveConfig(config_path, getConfig())) {
-				response = { Sensor::calibration_response::done, "Calibration successful" };
+				response = { Sensor::calibration_response::DONE, "Calibration successful" };
 			} else {
-				response = { Sensor::calibration_response::error, "Couldn't save new configuration" };
+				response = { Sensor::calibration_response::ERROR, "Couldn't save new configuration" };
 			}
 			break;
 		default:
-		response = { Sensor::calibration_response::error, "No such calibration step: " + String(step) };
+		response = { Sensor::calibration_response::ERROR, "No such calibration step: " + String(step) };
 		break;
 	}
 	return response;
