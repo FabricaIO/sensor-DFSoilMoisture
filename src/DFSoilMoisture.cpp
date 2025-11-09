@@ -33,7 +33,7 @@ bool DFSoilMoisture::begin() {
 /// @brief Takes a measurement
 /// @return True on success
 bool DFSoilMoisture::takeMeasurement() {
-	int raw_value = getAnalogValue(analog_config.RollingAverage);
+	int raw_value = getMVValue();
 	values[0] = map(raw_value, add_config.AirValue, add_config.WaterValue, 0, 100);
 	values[1] = raw_value;
 	return true;
@@ -87,14 +87,17 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 	Logger.println("Calibrating soil moisture sensor, step " + String(step));
 	std::tuple<Sensor::calibration_response, String> response;
 	int new_value;
+	// Disable averaging for calibration
+	bool average = analog_config.RollingAverage;
+	analog_config.RollingAverage = false;
 	switch (step) {
 		case 0:
 			response = { Sensor::calibration_response::NEXT, "Ensure sensor is completely dry, then click next." };
 			break;
 		case 1:
-			new_value = getAnalogValue(false);
+			new_value = getMVValue();
 			for (int i = 0; i < 9; i++) {
-				int temp_value = getAnalogValue(false);
+				int temp_value = getMVValue();
 				new_value = temp_value < new_value ? temp_value : new_value;
 				delay(50);
 			}
@@ -103,9 +106,9 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 			response = { Sensor::calibration_response::NEXT, "Submerge sensor in water to indicated max line, then click next." };
 			break;
 		case 2:
-			new_value = getAnalogValue(false);
+			new_value = getMVValue();
 			for (int i = 0; i < 9; i++) {
-				int temp_value = getAnalogValue(false);
+				int temp_value = getMVValue();
 				new_value = temp_value > new_value ? temp_value : new_value;
 				delay(50);
 			}
@@ -121,6 +124,8 @@ std::tuple<Sensor::calibration_response, String> DFSoilMoisture::calibrate(int s
 		response = { Sensor::calibration_response::ERROR, "No such calibration step: " + String(step) };
 		break;
 	}
+	// Re-enable averaging if needed
+	analog_config.RollingAverage = average;
 	return response;
 }
 
