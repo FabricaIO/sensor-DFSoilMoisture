@@ -14,7 +14,7 @@
 #include <Storage.h>
 #include <ArduinoJson.h>
 
-/// @brief A analog soil moisture sensor
+/// @brief Device for interfacing with analog soil moisture sensor
 class DFSoilMoisture : public GenericAnalogInput {
 	public:
 		DFSoilMoisture(String Name, int Pin = A0, String ConfigFile = "SoilMoisture.json");
